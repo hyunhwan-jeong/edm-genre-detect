@@ -1,12 +1,14 @@
-import argparse
-import json
-import numpy as np
-import soundfile as sf
-from transformers import pipeline
 import warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
 
 def main():
+    import argparse
+    import json
+    import numpy as np
+    import soundfile as sf
+    from transformers import pipeline
+
+
     # Set up argument parser
     parser = argparse.ArgumentParser(description='Audio Classification Tool')
     parser.add_argument('--input', type=str, required=True, help='Path to input WAV file')

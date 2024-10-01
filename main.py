@@ -1,24 +1,47 @@
+import argparse
+import json
 import numpy as np
 import soundfile as sf
 from transformers import pipeline
+import warnings
+warnings.filterwarnings("ignore", category=FutureWarning)
 
-# Load your WAV file
-file_path = "/Volumes/T9/TUNES/2katz/Always.wav"
-audio, samplerate = sf.read(file_path)
+def main():
+    # Set up argument parser
+    parser = argparse.ArgumentParser(description='Audio Classification Tool')
+    parser.add_argument('--input', type=str, required=True, help='Path to input WAV file')
+    parser.add_argument('--output', type=str, required=False, help='Path to output JSON file')
 
-# Check if audio has more than one channel and convert to mono by averaging the channels
-if len(audio.shape) > 1:
-    audio = np.mean(audio, axis=1)
+    # Parse arguments
+    args = parser.parse_args()
 
-# Ensure the audio is at 16kHz
-if samplerate != 16000:
-    from scipy.signal import resample
-    audio = resample(audio, int(16000 * len(audio) / samplerate))
+    # Load the WAV file
+    try:
+        audio, samplerate = sf.read(args.input)
+    except Exception as e:
+        raise SystemExit(f"Failed to read the audio file: {args.input}. Error: {str(e)}")
 
-# Initialize the pipeline with the audio classification model
-pipe = pipeline("audio-classification", model="mtg-upf/discogs-maest-30s-pw-129e", trust_remote_code=True)
+    # Convert to mono if necessary
+    if len(audio.shape) > 1:
+        audio = np.mean(audio, axis=1)
 
-# Perform classification
-results = pipe(audio)
-print(results)
+    # Resample to 16kHz if necessary
+    if samplerate != 16000:
+        from scipy.signal import resample
+        audio = resample(audio, int(16000 * len(audio) / samplerate))
 
+    # Initialize the pipeline with the audio classification model
+    pipe = pipeline("audio-classification", model="mtg-upf/discogs-maest-30s-pw-129e", trust_remote_code=True)
+
+    # Perform classification
+    results = pipe(audio)
+
+    # Output handling
+    if args.output:
+        with open(args.output, 'w') as f:
+            json.dump(results, f, indent=4)
+    else:
+        print(json.dumps(results, indent=4))
+
+if __name__ == "__main__":
+    main()
